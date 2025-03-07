@@ -1,0 +1,40 @@
+# Build output folders
+bin/
+obj/
+
+# Rider project files
+.idea/
+
+# Visual Studio specific files
+.vscode/
+.vs/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+# Uncomment if using the global NuGet cache
+# ~/.nuget/
+
+# Logs & Temporary Files
+*.log
+*.tlog
+*.cache
+*.pdb
+
+# Resharper files
+_ReSharper*/  
+*.DotSettings.user  
+
+# ASP.NET / Entity Framework migrations
+*.dbmdl
+*.jfm
+
+# Publish output
+publish/
