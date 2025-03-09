@@ -93,7 +93,7 @@ namespace DB_Octopus
         private string GetConfigFilePath()
         {
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
-            return Path.Combine(basePath, "..", "..", "..", "appsettings.json");
+            return Path.Combine(basePath, "appsettings.json");
         }
 
         private void LoadConfig()
