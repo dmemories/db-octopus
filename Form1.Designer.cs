@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             txtScriptMigrationPath = new TextBox();
             labMigrationTitle = new Label();
             btxScriptMigrationRun = new Button();
@@ -251,6 +252,9 @@
             Controls.Add(laxAtlasTitle);
             Controls.Add(labMigrationTitle);
             Controls.Add(txtScriptMigrationPath);
+            FormBorderStyle = FormBorderStyle.FixedSingle;
+            Icon = (Icon)resources.GetObject("$this.Icon");
+            MinimizeBox = false;
             Name = "Form1";
             Text = "DB Octopus 1.0.0";
             ResumeLayout(false);
