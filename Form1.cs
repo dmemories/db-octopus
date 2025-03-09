@@ -6,7 +6,6 @@ namespace DB_Octopus
     {
         private readonly ConfigManager _configManager;
         private readonly MigrationService _migrationService;
-        private string LAST_GEN_FILE = "";
 
         public Form1()
         {
@@ -37,30 +36,18 @@ namespace DB_Octopus
         {
             registerAlertEvent(e, () =>
             {
-                _migrationService.RunMigration();
-                MessageBox.Show("Migration Completed Successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                _migrationService.RunMigration(txtScriptMigrationPath.Text);
             });
         }
 
         private void txtScriptMigrationPath_DoubleClick(object sender, EventArgs e)
         {
-            using (FolderBrowserDialog folderDialog = new FolderBrowserDialog())
+            registerDoubleClickEvent(e, (FolderBrowserDialog folderDialog) =>
             {
-                if (folderDialog.ShowDialog() == DialogResult.OK)
-                {
-                    txtScriptMigrationPath.Text = folderDialog.SelectedPath;
-                    try
-                    {
-                        _configManager.migrationConfig.UpdateConfig(_configManager.migrationConfig.SqlFolder, txtScriptMigrationPath.Text);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Error saving config: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
-                }
-            }
+                txtScriptMigrationPath.Text = folderDialog.SelectedPath;
+                _configManager.migrationConfig.UpdateConfig(_configManager.migrationConfig.SqlFolder, txtScriptMigrationPath.Text);
+            });
         }
-
 
         private void registerDoubleClickEvent(EventArgs e, Action<FolderBrowserDialog> action)
         {
@@ -110,8 +97,8 @@ namespace DB_Octopus
                 if (confirmResult == DialogResult.Yes)
                 {
                     action();
+                    MessageBox.Show("Run Successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
-                MessageBox.Show("Run Successfully!", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             catch (Exception ex)
             {
@@ -174,12 +161,12 @@ namespace DB_Octopus
         {
             registerAlertEvent(e, () =>
             {
-                string detectFilePath = FileHelper.GetNewFile(_configManager.migrationConfig.GetConfig(_configManager.migrationConfig.SqlFolder), () =>
+                string detectFilePath = FileHelper.GetNewFile(txtScriptMigrationPath.Text, () =>
                 {
                     var result = CommandExecutor.RunCommand(
-                        _configManager.atlasConfig.GetConfig(_configManager.atlasConfig.Cmd),
-                        _configManager.atlasConfig.GetConfig(_configManager.atlasConfig.WorkingPath)
-                        );
+                        txtAtlasCommand.Text,
+                        txtAtlasWorkingPath.Text
+                    );
 
                     if (!string.IsNullOrEmpty(result.Error))
                     {
@@ -195,11 +182,10 @@ namespace DB_Octopus
 
                 string directory = Path.GetDirectoryName(detectFilePath) ?? throw new Exception("Failed to get directory name from file path.");
                 string oldFileName = Path.GetFileNameWithoutExtension(detectFilePath);
-                string suffix = _configManager.atlasConfig.GetConfig(_configManager.atlasConfig.ScriptName);
+                string suffix = txtAtlasScriptName.Text;
                 string newFileName = $"{oldFileName}_{suffix}";
                 string newFilePath = Path.Combine(directory, newFileName);
 
-                LAST_GEN_FILE = newFilePath;
                 File.Move(detectFilePath, newFilePath);
             });
         }
@@ -210,15 +196,13 @@ namespace DB_Octopus
         {
             registerAlertEvent(e, () =>
             {
-                if (LAST_GEN_FILE == "")
+                if (txtAtlasScriptName.Text == "")
                 {
-                    MessageBox.Show("Error: Have no LAST_GEN_FILE", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Error: Have no Script Name", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                string baseDirectory = Path.GetDirectoryName(LAST_GEN_FILE);
-                string parentDirectory = Path.GetDirectoryName(baseDirectory);
-                string subPath = _configManager.atlasConfig.GetConfig(_configManager.atlasConfig.SubPath);
+                string subPath = txtAtlasSubPath.Text;
                 string[] environments = subPath.Split(',')
                                .Select(x => x.Trim())
                                .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -231,13 +215,23 @@ namespace DB_Octopus
                     return;
                 }
 
+
+
+                string[] matchingFiles = Directory.GetFiles(txtScriptMigrationPath.Text, $"*{txtAtlasScriptName.Text}");
+                if (matchingFiles.Length == 0)
+                {
+                    throw new ArgumentException($"Not found {txtAtlasScriptName.Text} at {txtScriptMigrationPath.Text}", "");
+                }
+
                 string sumFileName = "atlas.sum";
-                string sourceSumFilePath = Path.Combine(baseDirectory, sumFileName);
+                string baseDirectory = Path.GetDirectoryName(txtScriptMigrationPath.Text) ?? string.Empty;
+                string scriptFilePath = matchingFiles.OrderByDescending(f => File.GetLastWriteTime(f)).First();
+                string sourceSumFilePath = Path.Combine(txtScriptMigrationPath.Text, sumFileName);
 
                 foreach (string env in environments)
                 {
-                    string newDir = Path.Combine(parentDirectory, env);
-                    string newFilePath = Path.Combine(newDir, Path.GetFileName(LAST_GEN_FILE));
+                    string newDir = Path.Combine(baseDirectory, env);
+                    string newFilePath = Path.Combine(newDir, Path.GetFileName(scriptFilePath));
                     string sumFilePath = Path.Combine(newDir, sumFileName);
 
                     if (!Directory.Exists(newDir))
@@ -245,11 +239,15 @@ namespace DB_Octopus
                         Directory.CreateDirectory(newDir);
                     }
 
-                    File.Copy(LAST_GEN_FILE, newFilePath, true);
+                    File.Copy(scriptFilePath, newFilePath, true);
                     File.Copy(sourceSumFilePath, sumFilePath, true);
                 }
             });
         }
 
+        private void btnAtlasNewRun_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

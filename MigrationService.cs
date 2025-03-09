@@ -14,10 +14,8 @@ namespace DB_Octopus
             _databaseService = databaseService;
         }
 
-        public void RunMigration()
+        public void RunMigration(string sqlFolder)
         {
-
-            string sqlFolder = _configManager.migrationConfig.GetConfig(_configManager.migrationConfig.SqlFolder);
             var sqlFiles = Directory.GetFiles(sqlFolder, "*.sql");
 
 
@@ -28,7 +26,7 @@ namespace DB_Octopus
 
             Console.WriteLine($"Found {sqlFiles.Length} SQL files. Starting migration...");
             ClearAllTables();
-            ExecuteSqlFiles();
+            ExecuteSqlFiles(sqlFolder);
         }
 
         public void ClearAllTables()
@@ -73,7 +71,7 @@ namespace DB_Octopus
             Console.WriteLine("All tables cleared successfully.");
         }
 
-        public void ExecuteSqlFiles()
+        public void ExecuteSqlFiles(string sqlFolder)
         {
             using var conn = _databaseService.GetConnection();
             conn.Open();
@@ -81,7 +79,6 @@ namespace DB_Octopus
             using (var extCmd = new NpgsqlCommand(@"CREATE EXTENSION IF NOT EXISTS ""uuid-ossp"";", conn))
                 extCmd.ExecuteNonQuery();
 
-            string sqlFolder = _configManager.migrationConfig.GetConfig(_configManager.migrationConfig.SqlFolder);
             var sqlFiles = Directory.GetFiles(sqlFolder, "*.sql");
 
             foreach (var file in sqlFiles.OrderBy(f => f))

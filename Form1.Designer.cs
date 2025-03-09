@@ -207,7 +207,7 @@
             btnAtlasNewRun.TabIndex = 8;
             btnAtlasNewRun.Text = "New";
             btnAtlasNewRun.UseVisualStyleBackColor = true;
-            btnAtlasNewRun.Click += btnAtlasDiffRun_Click;
+            btnAtlasNewRun.Click += btnAtlasNewRun_Click;
             // 
             // btnAtlasCopyRun
             // 
