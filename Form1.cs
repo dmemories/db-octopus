@@ -25,28 +25,12 @@ namespace DB_Octopus
                 txtAtlasSubPath.Text = _configManager.atlasConfig.GetConfig(_configManager.atlasConfig.SubPath);
                 txtAtlasWorkingPath.Text = _configManager.atlasConfig.GetConfig(_configManager.atlasConfig.WorkingPath);
                 txtAtlasCommand.Text = _configManager.atlasConfig.GetConfig(_configManager.atlasConfig.Cmd);
+                txtAtlasEnvironment.Text = _configManager.atlasConfig.GetConfig(_configManager.atlasConfig.Environment);
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Error loading config: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-
-        private void btxScriptMigrationRun_Click(object sender, EventArgs e)
-        {
-            registerAlertEvent(e, () =>
-            {
-                _migrationService.RunMigration(txtScriptMigrationPath.Text);
-            });
-        }
-
-        private void txtScriptMigrationPath_DoubleClick(object sender, EventArgs e)
-        {
-            registerDoubleClickEvent(e, (FolderBrowserDialog folderDialog) =>
-            {
-                txtScriptMigrationPath.Text = folderDialog.SelectedPath;
-                _configManager.migrationConfig.UpdateConfig(_configManager.migrationConfig.SqlFolder, txtScriptMigrationPath.Text);
-            });
         }
 
         private void registerDoubleClickEvent(EventArgs e, Action<FolderBrowserDialog> action)
@@ -104,6 +88,31 @@ namespace DB_Octopus
             {
                 MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private void btxScriptMigrationRun_Click(object sender, EventArgs e)
+        {
+            registerAlertEvent(e, () =>
+            {
+                _migrationService.RunMigration(txtScriptMigrationPath.Text);
+            });
+        }
+
+        private void btnScriptMigrationClear_Click(object sender, EventArgs e)
+        {
+            registerAlertEvent(e, () =>
+            {
+                _migrationService.ClearAllTables();
+            });
+        }
+
+        private void txtScriptMigrationPath_DoubleClick(object sender, EventArgs e)
+        {
+            registerDoubleClickEvent(e, (FolderBrowserDialog folderDialog) =>
+            {
+                txtScriptMigrationPath.Text = folderDialog.SelectedPath;
+                _configManager.migrationConfig.UpdateConfig(_configManager.migrationConfig.SqlFolder, txtScriptMigrationPath.Text);
+            });
         }
 
 
@@ -244,10 +253,68 @@ namespace DB_Octopus
                 }
             });
         }
+        private void txtAtlasEnvironment_KeyDown(object sender, KeyEventArgs e)
+        {
+            registerKeyDownEvent(e, () =>
+            {
+                _configManager.atlasConfig.UpdateConfig(_configManager.atlasConfig.Environment, txtAtlasEnvironment.Text);
+            });
+        }
+
 
         private void btnAtlasNewRun_Click(object sender, EventArgs e)
         {
+            registerAlertEvent(e, () =>
+            {
+                if (txtAtlasEnvironment.Text == "")
+                {
+                    MessageBox.Show("Error: Have no Environment", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
 
+                if (txtAtlasScriptName.Text == "")
+                {
+                    MessageBox.Show("Error: Have no Script Name", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                var result = CommandExecutor.RunCommand(
+                       "atlas migrate new --env " + txtAtlasEnvironment.Text + " " + txtAtlasScriptName.Text.Replace(".sql", ""),
+                       txtAtlasWorkingPath.Text
+                   );
+
+                if (!string.IsNullOrEmpty(result.Error))
+                {
+                    MessageBox.Show("Error: " + result.Error, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            });
         }
+
+
+        private void btnAtlasHashRun_Click(object sender, EventArgs e)
+        {
+            registerAlertEvent(e, () =>
+            {
+                if (txtAtlasEnvironment.Text == "")
+                {
+                    MessageBox.Show("Error: Have no Environment", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+
+                var result = CommandExecutor.RunCommand(
+                       "atlas migrate hash --env " + txtAtlasEnvironment.Text,
+                       txtAtlasWorkingPath.Text
+                   );
+
+                if (!string.IsNullOrEmpty(result.Error))
+                {
+                    MessageBox.Show("Error: " + result.Error, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+            });
+        }
+
+
     }
 }

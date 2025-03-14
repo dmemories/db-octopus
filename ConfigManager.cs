@@ -72,6 +72,7 @@ namespace DB_Octopus
             public string SubPath { get; } = "SubPath";
             public string WorkingPath { get; } = "WorkingPath";
             public string Cmd { get; } = "Cmd";
+            public string Environment { get; } = "Environment";
             public AtlasConfig(IConfigurationRoot _configuration, string _configFilePath, string section) : base(_configuration, _configFilePath, section) { }
         }
 
